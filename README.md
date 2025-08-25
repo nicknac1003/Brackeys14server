@@ -8,7 +8,7 @@ This is a basic Node.js Express server with a PostgreSQL connection.
    ```cmd
    npm install
    ```
-2. Create a `.env` file based on `.env.example` and set your PostgreSQL credentials.
+2. Create a `.env` file based and set your PostgreSQL credentials.
 3. Start the server:
    ```cmd
    npm start
@@ -16,5 +16,3 @@ This is a basic Node.js Express server with a PostgreSQL connection.
 
 ## Project Structure
 - `index.js`: Entry point for the Express server
-- `db.js`: PostgreSQL connection setup
-- `.env.example`: Example environment variables

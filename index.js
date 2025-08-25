@@ -1,10 +1,13 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
-const crypto = require('crypto'); // Built-in Node.js module
-require('dotenv').config();
+import express from 'express';
+import { Pool } from 'pg';
+import cors from 'cors';
+import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
+import { createUser } from './database.js';
+
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,17 +27,55 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-app.get('/auth/new', async (req, res) => {
+app.post('/auth/new', async (req, res) => {
     const headers = req.headers;
     const headerValidation = validateHeaders(headers);
     if (!headerValidation.valid) {
         return res.status(403).json({ error: headerValidation.error });
     }
 
+    let name;
+    try{
+        name = req.body.name;
+        if (!name) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+    }catch(err){
+        return res.status(400).json({ error: 'Invalid request body' });
+    }
+
     const userId = uuidv4();
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
-    res.json({ token });
+    let client;
+    try{
+        client = await pool.connect();
+
+        await createUser(client, userId, name);
+
+        const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        res.json({ token });
+    }catch(err){
+        console.error('Error creating user:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }finally{
+        if (client) {
+            client.release();
+        }
+    }
+
+
 });
+
+//TODO
+app.post('/player/save', authenticate, async (req, res) => {
+    return res.json({ message: 'not implemented' });
+});
+app.get('/player', authenticate, async (req, res) => {
+    const round = req.params.round;
+    return res.json({ message: 'not implemented' });
+});
+
+
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
@@ -57,14 +98,14 @@ function authenticate(req, res, next) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.userId = decoded.userId;
 
-        // Uncomment and configure HMAC verification if needed
-        // const secret = Buffer.from(process.env.HMAC_SECRET, 'base64');
-        // const hmac = crypto.createHmac('sha256', secret);
-        // const signature = hmac.update(token + headers['x-timestamp']).digest('base64');
 
-        // if (signature !== headers['x-signature']) {
-        //     return res.status(403).json({ error: 'Invalid signature' });
-        // }
+        const secret = Buffer.from(process.env.HMAC_SECRET, 'base64');
+        const hmac = crypto.createHmac('sha256', secret);
+        const signature = hmac.update(token + headers['x-timestamp']).digest('base64');
+
+        if (signature !== headers['x-signature']) {
+            return res.status(403).json({ error: 'Invalid signature' });
+        }
 
         next();
     } catch (err) {
