@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { createUser } from './database.js';
+import { createUser, savePlayer, getRandomPlayer } from './database.js';
 
 dotenv.config();
 
@@ -65,13 +65,47 @@ app.post('/auth/new', async (req, res) => {
 
 });
 
-//TODO
+
 app.post('/player/save', authenticate, async (req, res) => {
-    return res.json({ message: 'not implemented' });
+    const { userId } = req;
+    const { health, inventory, round } = req.body;
+
+    if (!health || !inventory || !round) {
+        return res.status(400).json({ error: 'missing required fields' });
+    }
+
+    let client;
+    try{
+        client = await pool.connect();
+        await savePlayer(client, userId, health, inventory, round);
+        return res.status(200).json({ message: 'Player saved successfully' });
+    }catch(err){
+        console.error('Error saving player:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }finally{
+        if (client) {
+            client.release();
+        }
+    }
 });
-app.get('/player', authenticate, async (req, res) => {
-    const round = req.params.round;
-    return res.json({ message: 'not implemented' });
+
+app.get('/player/random', authenticate, async (req, res) => {
+    const { round } = req.query;
+    const { userId } = req;
+    
+    let client;
+    try{
+        client = await pool.connect();
+        const result = await getRandomPlayer(client, userId, round);
+        return res.status(200).json(result);
+    }catch(err){
+        console.error('Error fetching player:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }finally{
+        if (client) {
+            client.release();
+        }
+    }
 });
 
 
