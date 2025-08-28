@@ -23,7 +23,7 @@ export async function savePlayer(client, userId, health, inventory, round) {
 export async function getRandomPlayer(client, userId, round) {
     try {
         const result = await client.query(
-            `SELECT p.name, pr.health, pr.inventory, pr.round, p.character_id as characterId
+            `SELECT p.name, pr.health, pr.inventory, pr.round, p.character_id
             FROM bakerybattle.playerround pr
             JOIN bakerybattle.player p ON pr.player_id = p.player_id
             WHERE pr.player_id != $1 AND pr.round = $2 
