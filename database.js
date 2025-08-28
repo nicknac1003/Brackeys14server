@@ -1,8 +1,8 @@
-export async function createUser(client, userId, name) {
+export async function createUser(client, userId, name, characterId) {
     try {
         await client.query(
-            'INSERT INTO bakerybattle.player (player_id, name) VALUES ($1, $2)', 
-            [userId, name]
+            'INSERT INTO bakerybattle.player (player_id, name, character_id) VALUES ($1, $2, $3)', 
+            [userId, name, characterId]
         );
     } catch (err) {
         console.error('Error creating user:', err);
@@ -23,7 +23,7 @@ export async function savePlayer(client, userId, health, inventory, round) {
 export async function getRandomPlayer(client, userId, round) {
     try {
         const result = await client.query(
-            `SELECT p.name, pr.health, pr.inventory, pr.round
+            `SELECT p.name, pr.health, pr.inventory, pr.round, p.character_id as characterId
             FROM bakerybattle.playerround pr
             JOIN bakerybattle.player p ON pr.player_id = p.player_id
             WHERE pr.player_id != $1 AND pr.round = $2 

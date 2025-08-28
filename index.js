@@ -34,11 +34,10 @@ app.post('/auth/new', async (req, res) => {
         return res.status(403).json({ error: headerValidation.error });
     }
 
-    let name;
+    const {name, characterId} = req.body;
     try{
-        name = req.body.name;
-        if (!name) {
-            return res.status(400).json({ error: 'Name is required' });
+        if (!name || !characterId) {
+            return res.status(400).json({ error: 'Name and Character ID are required' });
         }
     }catch(err){
         return res.status(400).json({ error: 'Invalid request body' });
@@ -49,7 +48,7 @@ app.post('/auth/new', async (req, res) => {
     try{
         client = await pool.connect();
 
-        await createUser(client, userId, name);
+        await createUser(client, userId, name, characterId);
 
         const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
         res.json({ token });
