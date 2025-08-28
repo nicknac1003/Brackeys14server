@@ -35,8 +35,9 @@ app.post('/auth/new', async (req, res) => {
     }
 
     const {name, characterId} = req.body;
+    console.log('Creating user:', { name, characterId });
     try{
-        if (!name || !characterId) {
+        if (!name || characterId === null || characterId === undefined) {
             return res.status(400).json({ error: 'Name and Character ID are required' });
         }
     }catch(err){
